@@ -1,0 +1,40 @@
+version: "3.8"
+
+name: "cafa"
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        USER: vscode
+        WORKDIR: /workspace/cafa
+    volumes:
+      - ..:/workspace/cafa:cached
+    command: sleep infinity
+    depends_on:
+      wait-for-postgres:
+        condition: service_completed_successfully
+
+  postgres:
+    image: postgres:13.7
+    ports:
+      - "$DB_PORT:5432"
+    environment:
+      - POSTGRES_USER=$DB_USER
+      - POSTGRES_PASSWORD=$DB_PASSWORD
+      - POSTGRES_DB=$DB_NAME
+    healthcheck:
+      test: "exit 0"
+    volumes:
+      - pgcafa:/var/lib/postgresql/data
+
+  wait-for-postgres:
+    image: atkrad/wait4x
+    depends_on:
+      - postgres
+    command: tcp postgres:5432
+
+volumes:
+  pgcafa:
